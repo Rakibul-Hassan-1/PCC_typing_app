@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboard</title>
+    <style>
+      .first {
+        color: gold;
+        font-weight: bold;
+      }
+      .second {
+        color: silver;
+        font-weight: bold;
+      }
+      .third {
+        color: bronze;
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Leaderboard</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>Username</th>
+          <th>WPM</th>
+          <th>Accuracy (%)</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboardBody">
+        <!-- Entries will be populated by JavaScript -->
+      </tbody>
+    </table>
+    <a href="{% url 'save_to_excel' %}" class="btn btn-success mt-3"
+      >Download Typing Data (Excel)</a
+    >
+
+    <script>
+      const leaderboardSocket = new WebSocket(
+        "ws://" + window.location.host + "/ws/leaderboard/"
+      );
+
+      leaderboardSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        updateLeaderboardUI(data.leaderboard);
+      };
+
+      leaderboardSocket.onclose = function (e) {
+        console.error("Leaderboard socket closed unexpectedly");
+      };
+
+      function updateLeaderboardUI(leaderboard) {
+        const tbody = document.getElementById("leaderboardBody");
+        const existingRows = tbody.querySelectorAll("tr");
+
+        leaderboard.forEach((entry, index) => {
+          let row;
+          if (index < existingRows.length) {
+            row = existingRows[index];
+          } else {
+            row = tbody.insertRow();
+            row.insertCell(0);
+            row.insertCell(1);
+            row.insertCell(2);
+            row.insertCell(3);
+          }
+
+          // Update content
+          row.cells[0].textContent = index + 1;
+          row.cells[1].textContent = entry.user.username;
+          row.cells[2].textContent = entry.wpm.toFixed(2);
+          row.cells[3].textContent = entry.accuracy.toFixed(2);
+
+          // Update class based on position
+          row.className = ""; // Reset class
+          if (index === 0) row.classList.add("first");
+          else if (index === 1) row.classList.add("second");
+          else if (index === 2) row.classList.add("third");
+        });
+
+        // Remove any extra rows
+        for (let i = leaderboard.length; i < existingRows.length; i++) {
+          tbody.removeChild(existingRows[i]);
+        }
+      }
+
+      function requestLeaderboardUpdate() {
+        leaderboardSocket.send(JSON.stringify({ message: "request_update" }));
+      }
+
+      // Optionally request an update as soon as the page loads
+      window.onload = requestLeaderboardUpdate;
+    </script>
+  </body>
+</html>

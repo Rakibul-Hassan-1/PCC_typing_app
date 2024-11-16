@@ -1,0 +1,19 @@
+{% extends "base_generic.html" %}
+{% block title %}
+PCC Typing Test
+{% endblock %}
+
+{% block content %} 
+<header class="mb-4">
+   
+    {% if user.is_authenticated %}
+     <h1 class="text-center">Dashboard</h1>
+      <p>Welcome, {{ user.get_full_name|default:user.username }}</p>
+      <a href="{% url 'typing_contest' %}" class="btn btn-primary" style="align-items: center;">Enter Contest</a> 
+    {% else %}
+      <marquee>Welcome, Guest!</marquee>
+    {% endif %}
+   
+  </header>
+  
+{% endblock %}

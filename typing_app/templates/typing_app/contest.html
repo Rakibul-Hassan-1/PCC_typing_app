@@ -1,0 +1,209 @@
+{% extends "base_generic.html" %} {% block title %}Typing Contest{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <!-- Typing Test Section -->
+    <div class="col-md-8">
+      <div class="text-center mb-4">
+        <h1 class="display-4">Typing Contest</h1>
+        <p class="lead">
+          Test your typing speed and accuracy. Compete with others and see how
+          you rank!
+        </p>
+      </div>
+
+      <div class="card shadow p-4">
+        <div class="card-body">
+          <h5 class="text-muted">Reference Text</h5>
+          <div
+            id="referenceText"
+            class="p-3 border rounded bg-light text-secondary"
+          >
+            Click "Start Test" to begin!
+          </div>
+          <select id="timeLimit" class="form-control my-3">
+            <option value="30">30 seconds</option>
+            <option value="60">60 seconds</option>
+          </select>
+          <button
+            class="btn btn-primary btn-lg btn-block"
+            onclick="startTest()"
+          >
+            Start Test
+          </button>
+          <p class="mt-3">
+            <strong>Time Remaining:</strong>
+            <span
+              id="timeRemaining"
+              class="badge badge-primary"
+              style="color: green"
+              >0</span
+            >
+          </p>
+          <textarea
+            id="testArea"
+            class="form-control"
+            placeholder="Start typing..."
+            disabled
+          ></textarea>
+          <div class="mt-3">
+            <p>
+              <strong>Speed:</strong>
+              <span id="speed" class="text-success">0</span> WPM
+            </p>
+            <p>
+              <strong>Accuracy:</strong>
+              <span id="accuracy" class="text-success">100</span>%
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Section -->
+    <div class="col-md-4">
+      <div class="card shadow p-4">
+        <div class="card-body">
+          <h3 class="text-center text-primary">Leaderboard</h3>
+          <a href="{% url 'save_to_excel' %}" class="btn btn-success"
+            >Download My Typing Data (Excel)</a
+          >
+
+          <hr />
+          <ol class="list-group">
+            {% for entry in leaderboard %}
+            <li
+              class="list-group-item d-flex justify-content-between align-items-center {{ entry.position_class }}"
+            >
+              <span>{{ entry.user_name }}</span>
+              <span class="badge {{ entry.badge_class }}"
+                >{{ entry.position }}</span
+              >
+              <span>{{ entry.wpm }} WPM</span>
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #referenceText,
+  #testArea {
+    height: 150px;
+    overflow-y: auto;
+    font-size: 1rem;
+    resize: none;
+  }
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+  .badge-primary {
+    font-size: 1rem;
+  }
+  .first-place {
+    background-color: gold;
+  }
+  .second-place {
+    background-color: silver;
+  }
+  .third-place {
+    background-color: #cd7f32;
+  }
+</style>
+
+<script>
+  let startTime, timerId, countDownId;
+  const testArea = document.getElementById("testArea");
+  const referenceTextElement = document.getElementById("referenceText");
+  const speedDisplay = document.getElementById("speed");
+  const accuracyDisplay = document.getElementById("accuracy");
+  const timeLimitSelect = document.getElementById("timeLimit");
+  const timeRemainingDisplay = document.getElementById("timeRemaining");
+  const sampleTexts = [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "The quick brown fox jumps over the lazy dog.",
+    "A journey of a thousand miles begins with a single step.",
+    "Trust is the glue that holds teams together and builds success.",
+  ];
+
+  function startTest() {
+    if (!startTime) {
+      const randomIndex = Math.floor(Math.random() * sampleTexts.length);
+      const selectedText = sampleTexts[randomIndex];
+      referenceTextElement.textContent = selectedText;
+      testArea.disabled = false;
+      testArea.value = "";
+      testArea.focus();
+      startTime = new Date();
+      testArea.oninput = updateResults;
+
+      const timeLimit = parseInt(timeLimitSelect.value, 10);
+      timeRemainingDisplay.textContent = timeLimit;
+      timerId = setTimeout(endTest, timeLimit * 1000);
+      countDown(timeLimit);
+    }
+  }
+
+  function countDown(timeLimit) {
+    let secondsRemaining = timeLimit;
+    countDownId = setInterval(function () {
+      secondsRemaining--;
+      timeRemainingDisplay.textContent = secondsRemaining + " seconds"; // Update the display with "seconds"
+      if (secondsRemaining <= 0) {
+        clearInterval(countDownId);
+      }
+    }, 1000);
+  }
+
+  function endTest() {
+    clearInterval(countDownId);
+    testArea.disabled = true;
+    const elapsedTime = (new Date() - startTime) / 60000; // Convert ms to minutes
+    const textEntered = testArea.value.trim();
+    const wordsTyped = textEntered.split(/\s+/).length;
+    const wordsPerMinute = Math.round(wordsTyped / elapsedTime);
+    speedDisplay.textContent = wordsPerMinute;
+    updateResults(true); // Final accuracy update
+    startTime = null; // Reset startTime
+  }
+
+  function updateResults(final = false) {
+    const textEntered = testArea.value;
+    let matchLength = Math.min(
+      textEntered.length,
+      referenceTextElement.textContent.length
+    );
+    let correctChars = 0;
+    for (let i = 0; i < matchLength; i++) {
+      if (textEntered[i] === referenceTextElement.textContent[i]) {
+        correctChars++;
+      }
+    }
+
+    const accuracy = (
+      (correctChars / referenceTextElement.textContent.length) *
+      100
+    ).toFixed(2);
+    accuracyDisplay.textContent = accuracy + "%";
+
+    if (final) {
+      const totalCorrectChars = textEntered
+        .split("")
+        .reduce(
+          (acc, char, i) =>
+            acc + (char === referenceTextElement.textContent[i] ? 1 : 0),
+          0
+        );
+      const finalAccuracy = (
+        (totalCorrectChars / referenceTextElement.textContent.length) *
+        100
+      ).toFixed(2);
+      accuracyDisplay.textContent = finalAccuracy + "%";
+    }
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base_generic.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="mb-4">
+        <h1 class="text-center">Dashboard</h1>
+        {% if user.is_authenticated %}
+          <p>Welcome, {{ user.get_full_name|default:user.username }}</p>
+        {% else %}
+          <p>Welcome, Guest!</p>
+        {% endif %}
+      </header>
+    <!-- Other dashboard content -->
+    <a href="{% url 'typing_contest' %}" class="btn btn-primary">Enter Contest</a>
+   
+</div>
+
+{% endblock %}
