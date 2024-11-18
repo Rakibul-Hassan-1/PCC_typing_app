@@ -24,7 +24,7 @@ class Score(models.Model):
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     wpm = models.FloatField()
     accuracy = models.FloatField()
-    # other fields as necessary
+   
 
 #user data saving
 from django.db import models

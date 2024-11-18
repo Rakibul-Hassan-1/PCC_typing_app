@@ -10,7 +10,6 @@ class TypingContextForm(forms.ModelForm):
         model = TypingContext
         fields = ['text', 'start_time']
 
-
 class TypingTestForm(forms.Form):
     text_entered = forms.CharField(widget=forms.Textarea, label="Type here")
     start_time = forms.DateTimeField(widget=forms.HiddenInput())

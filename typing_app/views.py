@@ -1,27 +1,20 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import TypingContext
-from .forms import TypingContextForm  # You'll create this form next
-from datetime import datetime
-from .models import TypingContext
+from .forms import TypingContextForm  
 from .forms import TypingContextForm
 from django.utils import timezone
-# @login_required
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.contrib.auth.forms import UserCreationForm
-
 from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 def home(request):
     return render(request, 'home.html')
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
-
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
 
 def login_view(request):
     if request.method == 'POST':
@@ -29,7 +22,7 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home')  # Redirect to home after successful login
+            return redirect('home')  
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
@@ -42,9 +35,6 @@ def logout_view(request):
     return redirect('home')
 
 # dashboard
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-
 @login_required
 def dashboard(request):
     return render(request, 'typing_app/dashboard.html')
@@ -54,12 +44,10 @@ from django.shortcuts import render
 def typing_contest(request):
     return render(request, 'typing_app/contest.html')  # Render the provided HTML
 
-
 class SignUpView(CreateView):
     form_class = UserCreationForm
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
-
 
 def calculate_score(submitted_text, start_time, end_time):
     """
@@ -142,17 +130,6 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 import pandas as pd
 from .models import TypingData
-
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-import pandas as pd
-from .models import TypingData
-
-
-from django.http import HttpResponse
-import pandas as pd
-from .models import TypingData
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def save_to_excel(request):

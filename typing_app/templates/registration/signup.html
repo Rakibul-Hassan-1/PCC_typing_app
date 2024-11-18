@@ -21,6 +21,15 @@
   .form-control {
     border-radius: 0.25rem;
     border: 1px solid #ced4da;
+    position: relative;
+  }
+
+  .form-control.is-valid {
+    border-color: #28a745;
+  }
+
+  .form-control.is-invalid {
+    border-color: #dc3545;
   }
 
   .btn-primary {
@@ -39,6 +48,38 @@
     border-color: #f5c6cb;
   }
 </style>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
+    const fields = form.querySelectorAll(".form-control");
+
+    fields.forEach((field) => {
+      field.addEventListener("input", function () {
+        if (field.checkValidity()) {
+          field.classList.add("is-valid");
+          field.classList.remove("is-invalid");
+        } else {
+          field.classList.add("is-invalid");
+          field.classList.remove("is-valid");
+        }
+      });
+    });
+
+    form.addEventListener("submit", function (e) {
+      let valid = true;
+      fields.forEach((field) => {
+        if (!field.checkValidity()) {
+          valid = false;
+          field.classList.add("is-invalid");
+        }
+      });
+
+      if (!valid) {
+        e.preventDefault();
+      }
+    });
+  });
+</script>
 {% endblock %} {% block title %}Sign Up{% endblock %} {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-6">
@@ -47,7 +88,7 @@
         <h4 class="mb-0">Sign Up</h4>
       </div>
       <div class="card-body">
-        <form method="post">
+        <form method="post" novalidate>
           {% csrf_token %} {% for field in form %}
           <div class="form-group">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -58,7 +99,9 @@
             {% endfor %}
           </div>
           {% endfor %}
-          <button type="submit" class="btn btn-primary">Create Account</button>
+          <button type="submit" class="btn btn-primary w-100">
+            Create Account
+          </button>
         </form>
       </div>
     </div>

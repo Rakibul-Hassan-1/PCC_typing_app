@@ -1,209 +1,400 @@
-{% extends "base_generic.html" %} {% block title %}Typing Contest{% endblock %}
-{% block content %}
-<div class="container mt-5">
-  <div class="row">
-    <!-- Typing Test Section -->
-    <div class="col-md-8">
-      <div class="text-center mb-4">
-        <h1 class="display-4">Typing Contest</h1>
-        <p class="lead">
-          Test your typing speed and accuracy. Compete with others and see how
-          you rank!
-        </p>
-      </div>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamic Typing Contest</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Enhanced Dynamic Design */
+      body {
+        background: linear-gradient(45deg, #1e1e2f, #252546);
+        color: #e0e0e0;
+        font-family: "Roboto Mono", monospace;
+      }
 
-      <div class="card shadow p-4">
-        <div class="card-body">
-          <h5 class="text-muted">Reference Text</h5>
-          <div
-            id="referenceText"
-            class="p-3 border rounded bg-light text-secondary"
-          >
-            Click "Start Test" to begin!
-          </div>
-          <select id="timeLimit" class="form-control my-3">
-            <option value="30">30 seconds</option>
-            <option value="60">60 seconds</option>
-          </select>
-          <button
-            class="btn btn-primary btn-lg btn-block"
-            onclick="startTest()"
-          >
-            Start Test
-          </button>
-          <p class="mt-3">
-            <strong>Time Remaining:</strong>
-            <span
-              id="timeRemaining"
-              class="badge badge-primary"
-              style="color: green"
-              >0</span
-            >
-          </p>
-          <textarea
-            id="testArea"
-            class="form-control"
-            placeholder="Start typing..."
-            disabled
-          ></textarea>
-          <div class="mt-3">
-            <p>
-              <strong>Speed:</strong>
-              <span id="speed" class="text-success">0</span> WPM
-            </p>
-            <p>
-              <strong>Accuracy:</strong>
-              <span id="accuracy" class="text-success">100</span>%
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      .card {
+        border-radius: 1rem;
+        margin-top: 30px;
+      }
 
-    <!-- Leaderboard Section -->
-    <div class="col-md-4">
-      <div class="card shadow p-4">
-        <div class="card-body">
-          <h3 class="text-center text-primary">Leaderboard</h3>
-          <a href="{% url 'save_to_excel' %}" class="btn btn-success"
-            >Download My Typing Data (Excel)</a
-          >
+      .bg-gradient-dark {
+        background: linear-gradient(90deg, #33334d, #1e1e2f);
+      }
 
-          <hr />
-          <ol class="list-group">
-            {% for entry in leaderboard %}
-            <li
-              class="list-group-item d-flex justify-content-between align-items-center {{ entry.position_class }}"
-            >
-              <span>{{ entry.user_name }}</span>
-              <span class="badge {{ entry.badge_class }}"
-                >{{ entry.position }}</span
-              >
-              <span>{{ entry.wpm }} WPM</span>
+      .btn-light {
+        background-color: #444466;
+        border: none;
+      }
+
+      .btn-light:hover {
+        background-color: #555577;
+      }
+
+      .animate-pulse {
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+
+        50% {
+          transform: scale(1.05);
+        }
+
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      textarea:focus {
+        outline: 2px solid #6c63ff;
+        box-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
+      }
+
+      /* For refresh button */
+      #resultModal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1000; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(
+          0,
+          0,
+          0,
+          0.5
+        ); /* Black background with opacity */
+        font-family: Arial, sans-serif;
+      }
+
+      /* Modal content box */
+      .modal-content {
+        background-color: #fff;
+        margin: 10% auto; /* 10% from top and centered */
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%; /* 80% of the window */
+        max-width: 500px; /* Max width for larger screens */
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        animation: slideDown 0.4s ease;
+      }
+
+      /* Modal heading */
+      .modal-content h2 {
+        color: #4caf50;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+      }
+
+      /* Modal paragraph */
+      .modal-content p {
+        color: #555;
+        font-size: 1rem;
+        margin-bottom: 20px;
+      }
+
+      /* Refresh button */
+      .refresh-button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .refresh-button:hover {
+        background-color: #45a049;
+      }
+
+      /* Animation for modal */
+      @keyframes slideDown {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">PCC Typing Contest</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#">Home</a>
             </li>
-            {% endfor %}
-          </ol>
+            <li class="nav-item">
+              <a class="nav-link" href="#">User: {{ user.username }}</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/logout">Logout</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-5" style="min-height: 100vh">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <!-- Card for Typing Contest -->
+          <div class="card shadow-lg border-0 bg-dark text-light">
+            <div
+              class="card-header bg-gradient-dark text-white text-center py-4"
+            >
+              <h3 class="mb-0">Typing Contest</h3>
+            </div>
+            <div class="card-body">
+              <!-- Reference Text Section -->
+              <div>
+                <h5 class="text-muted mb-3">Reference Text</h5>
+                <div
+                  id="referenceText"
+                  class="p-3 border rounded bg-dark text-secondary text-center"
+                  style="
+                    min-height: 200px;
+                    font-size: 1.5rem;
+                    line-height: 1.8;
+                    overflow: hidden;
+                  "
+                >
+                  Click "Space" to start typing...!
+                </div>
+              </div>
+
+              <!-- Time Limit and Start Test Button -->
+              <div
+                class="d-flex align-items-center justify-content-between mt-4"
+              >
+                <div>
+                  <label for="timeLimit" class="form-label me-2"
+                    >Select Time Limit:</label
+                  >
+                  <select
+                    id="timeLimit"
+                    class="form-select w-auto d-inline-block bg-dark text-light border-secondary"
+                  >
+                    <option value="30">30 seconds</option>
+                    <option value="60">60 seconds</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Timer and Typing Area -->
+              <div class="mt-4">
+                <div
+                  class="d-flex justify-content-center align-items-center mb-3"
+                >
+                  <strong class="me-2">Time Remaining:</strong>
+                  <span
+                    id="timeRemaining"
+                    class="badge bg-info text-light"
+                    style="font-size: 1.5rem"
+                    >0</span
+                  >
+                </div>
+                <textarea
+                  id="testArea"
+                  class="form-control shadow-sm bg-dark text-light border-secondary"
+                  placeholder="Start typing..."
+                  disabled
+                  style="
+                    height: 150px;
+                    font-size: 1.2rem;
+                    line-height: 1.6;
+                    margin-bottom: 20px;
+                  "
+                ></textarea>
+              </div>
+
+              <!-- Results Section -->
+              <div
+                class="d-flex justify-content-around align-items-center mt-4"
+              >
+                <div class="text-center">
+                  <p class="mb-1"><strong>Speed</strong></p>
+                  <p id="speed" class="text-info display-6">0</p>
+                  <small>WPM</small>
+                </div>
+                <div class="text-center">
+                  <p class="mb-1"><strong>Accuracy</strong></p>
+                  <p id="accuracy" class="text-success display-6">100</p>
+                  <small>%</small>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<style>
-  #referenceText,
-  #testArea {
-    height: 150px;
-    overflow-y: auto;
-    font-size: 1rem;
-    resize: none;
-  }
-  .btn-primary:hover {
-    background-color: #0056b3;
-  }
-  .badge-primary {
-    font-size: 1rem;
-  }
-  .first-place {
-    background-color: gold;
-  }
-  .second-place {
-    background-color: silver;
-  }
-  .third-place {
-    background-color: #cd7f32;
-  }
-</style>
+    <!-- Refresh button -->
+    <div id="resultModal" class="modal">
+      <div class="modal-content">
+        <h2>🎉 Test Completed! 🎉</h2>
+        <p id="resultText">Your test results will appear here.</p>
+        <button class="refresh-button" onclick="refreshPage()">
+          Refresh Page
+        </button>
+      </div>
+    </div>
 
-<script>
-  let startTime, timerId, countDownId;
-  const testArea = document.getElementById("testArea");
-  const referenceTextElement = document.getElementById("referenceText");
-  const speedDisplay = document.getElementById("speed");
-  const accuracyDisplay = document.getElementById("accuracy");
-  const timeLimitSelect = document.getElementById("timeLimit");
-  const timeRemainingDisplay = document.getElementById("timeRemaining");
-  const sampleTexts = [
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "The quick brown fox jumps over the lazy dog.",
-    "A journey of a thousand miles begins with a single step.",
-    "Trust is the glue that holds teams together and builds success.",
-  ];
+    <script>
+      let startTime, timerId, countDownId;
+      const testArea = document.getElementById("testArea");
+      const referenceTextElement = document.getElementById("referenceText");
+      const speedDisplay = document.getElementById("speed");
+      const accuracyDisplay = document.getElementById("accuracy");
+      const timeLimitSelect = document.getElementById("timeLimit");
+      const timeRemainingDisplay = document.getElementById("timeRemaining");
+      const sampleTexts = [
+        "Sarah, a young entrepreneur, was browsing a thrift store when a worn-out leather-bound notebook caught her eye. It was priced at a mere $5. Intrigued, she bought it and discovered pages filled with business ideas from the 1920s. Inspired, she adapted one idea to the modern market, launching a successful online vintage clothing store. That $5 notebook became the catalyst for a multi-million dollar business, proving that sometimes, the most valuable investments come in unexpected packages.",
+        "The way you perceive the world and yourself has a profound impact on your reality. Your thoughts are like seeds, and the ones you nurture will ultimately blossom into your life experiences. Train your mind to focus on the positive aspects of yourself, your accomplishments, and the possibilities that lie ahead. Practice gratitude daily, affirming your worth and visualizing your success. By cultivating a positive mental landscape, you'll attract more positivity, abundance, and opportunities into your life.",
+        "The first personnel management department started at the National Cash Register Co.",
+        "Trust is the glue that holds teams together, the invisible bond that enables members to rely on each other, share ideas openly, and take risks without fear of judgment or reprisal. Trust is not built overnight; it requires consistent communication, mutual respect, and a willingness to be vulnerable. When team members trust each other, they are more likely to collaborate effectively, share information freely, and support each other through challenges. A lack of trust, on the other hand, can breed suspicion, conflict, and ultimately undermine the team's performance.",
+        "The recent emergence of several competitive typing websites has allowed several fast typists on computer keyboards to emerge along with new records, though these are unverifiable for the most part. Two of the most notable online records that are considered genuine are 241.82 wpm on an English text on typingzone.com by Brazilian Guilherme Sandrini.",
+        "In their early 20s, Emily and Ben set an ambitious goal: to save $100,000 in 5 years for a down payment on their dream home. They created a detailed budget, cut back on discretionary spending, and started side hustles to increase their income. They even tracked their progress on a whiteboard in their living room, marking each $1,000 saved with a star. The journey wasn't easy. There were months when they barely scraped by, and unexpected expenses threatened to derail their plans. But they stayed focused, motivated by their shared dream. After 4 years and 11 months, they reached their goal, a testament to their unwavering commitment and financial discipline.",
+      ];
 
-  function startTest() {
-    if (!startTime) {
-      const randomIndex = Math.floor(Math.random() * sampleTexts.length);
-      const selectedText = sampleTexts[randomIndex];
-      referenceTextElement.textContent = selectedText;
-      testArea.disabled = false;
-      testArea.value = "";
-      testArea.focus();
-      startTime = new Date();
-      testArea.oninput = updateResults;
+      function startTest() {
+        if (!startTime) {
+          const randomIndex = Math.floor(Math.random() * sampleTexts.length);
+          const selectedText = sampleTexts[randomIndex];
+          referenceTextElement.textContent = selectedText;
+          testArea.disabled = false;
+          testArea.value = "";
+          testArea.focus();
+          startTime = new Date();
+          testArea.oninput = updateResults;
 
-      const timeLimit = parseInt(timeLimitSelect.value, 10);
-      timeRemainingDisplay.textContent = timeLimit;
-      timerId = setTimeout(endTest, timeLimit * 1000);
-      countDown(timeLimit);
-    }
-  }
+          const timeLimit = parseInt(timeLimitSelect.value, 10);
+          timeRemainingDisplay.textContent = timeLimit;
+          timerId = setTimeout(endTest, timeLimit * 1000);
+          countDown(timeLimit);
+        }
+      }
 
-  function countDown(timeLimit) {
-    let secondsRemaining = timeLimit;
-    countDownId = setInterval(function () {
-      secondsRemaining--;
-      timeRemainingDisplay.textContent = secondsRemaining + " seconds"; // Update the display with "seconds"
-      if (secondsRemaining <= 0) {
+      function countDown(timeLimit) {
+        let secondsRemaining = timeLimit;
+        countDownId = setInterval(function () {
+          secondsRemaining--;
+          timeRemainingDisplay.textContent = secondsRemaining;
+          if (secondsRemaining <= 0) {
+            clearInterval(countDownId);
+          }
+        }, 1000);
+      }
+
+      function refreshPage() {
+        location.reload();
+      }
+
+      // Update your endTest function
+      function endTest() {
         clearInterval(countDownId);
+        testArea.disabled = true;
+        const elapsedTime = (new Date() - startTime) / 60000; // Convert ms to minutes
+        const textEntered = testArea.value.trim();
+        const wordsTyped = textEntered.split(/\s+/).length;
+        const wordsPerMinute = Math.round(wordsTyped / elapsedTime);
+        updateResults(true); // Final accuracy update
+        startTime = null; // Reset startTime
+
+        const accuracy = accuracyDisplay.textContent; // Get the accuracy text
+        showModal(wordsPerMinute, accuracy);
       }
-    }, 1000);
-  }
 
-  function endTest() {
-    clearInterval(countDownId);
-    testArea.disabled = true;
-    const elapsedTime = (new Date() - startTime) / 60000; // Convert ms to minutes
-    const textEntered = testArea.value.trim();
-    const wordsTyped = textEntered.split(/\s+/).length;
-    const wordsPerMinute = Math.round(wordsTyped / elapsedTime);
-    speedDisplay.textContent = wordsPerMinute;
-    updateResults(true); // Final accuracy update
-    startTime = null; // Reset startTime
-  }
-
-  function updateResults(final = false) {
-    const textEntered = testArea.value;
-    let matchLength = Math.min(
-      textEntered.length,
-      referenceTextElement.textContent.length
-    );
-    let correctChars = 0;
-    for (let i = 0; i < matchLength; i++) {
-      if (textEntered[i] === referenceTextElement.textContent[i]) {
-        correctChars++;
+      // Function to display the modal with details
+      function showModal(wordsPerMinute, accuracy) {
+        const resultText = document.getElementById("resultText");
+        // Use `<br>` tags for line breaks
+        resultText.innerHTML = `
+    <strong>Words Per Minute:</strong> ${wordsPerMinute}<br>
+    <strong>Accuracy:</strong> ${accuracy}
+  `;
+        document.getElementById("resultModal").style.display = "block";
       }
-    }
 
-    const accuracy = (
-      (correctChars / referenceTextElement.textContent.length) *
-      100
-    ).toFixed(2);
-    accuracyDisplay.textContent = accuracy + "%";
+      function updateResults(final = false) {
+        const textEntered = testArea.value.trim();
+        const referenceText = referenceTextElement.textContent;
 
-    if (final) {
-      const totalCorrectChars = textEntered
-        .split("")
-        .reduce(
-          (acc, char, i) =>
-            acc + (char === referenceTextElement.textContent[i] ? 1 : 0),
-          0
+        // Calculate accuracy
+        let matchLength = Math.min(textEntered.length, referenceText.length);
+        let correctChars = 0;
+        for (let i = 0; i < matchLength; i++) {
+          if (textEntered[i] === referenceText[i]) {
+            correctChars++;
+          }
+        }
+        const accuracy = ((correctChars / referenceText.length) * 100).toFixed(
+          2
         );
-      const finalAccuracy = (
-        (totalCorrectChars / referenceTextElement.textContent.length) *
-        100
-      ).toFixed(2);
-      accuracyDisplay.textContent = finalAccuracy + "%";
-    }
-  }
-</script>
+        accuracyDisplay.textContent = accuracy;
 
-{% endblock %}
+        // Calculate WPM
+        const elapsedTime = (new Date() - startTime) / 60000; // Convert ms to minutes
+        const wordsTyped = textEntered.split(/\s+/).length;
+        const wordsPerMinute = Math.round(wordsTyped / elapsedTime);
+
+        if (final) {
+          // Final accuracy update
+          const totalCorrectChars = textEntered
+            .split("")
+            .reduce(
+              (acc, char, i) => acc + (char === referenceText[i] ? 1 : 0),
+              0
+            );
+          const finalAccuracy = (
+            (totalCorrectChars / referenceText.length) *
+            100
+          ).toFixed(2);
+          accuracyDisplay.textContent = finalAccuracy;
+        }
+
+        // Update WPM display live
+        speedDisplay.textContent =
+          isNaN(wordsPerMinute) || elapsedTime === 0 ? 0 : wordsPerMinute;
+      }
+
+      document.addEventListener("keydown", function (event) {
+        if (event.code === "Space" && !startTime) {
+          event.preventDefault(); // Prevent the default space behavior (scrolling)
+          startTest();
+        }
+      });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
